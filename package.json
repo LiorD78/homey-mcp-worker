@@ -1,0 +1,17 @@
+{
+  "name": "homey-mcp-worker",
+  "version": "0.1.0",
+  "description": "MCP server exposing Homey Pro 2023 API as tools for Claude.ai",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "tail": "wrangler tail"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250508.0",
+    "typescript": "^5.5.0",
+    "wrangler": "^3.80.0"
+  }
+}

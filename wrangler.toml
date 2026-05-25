@@ -1,0 +1,12 @@
+name = "homey-mcp-worker"
+main = "src/index.ts"
+compatibility_date = "2025-05-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Public Homey cloud ID — not secret, just convenient as config
+[vars]
+HOMEY_CLOUD_ID = "6407154758e4600b84144638"
+
+# Secrets set via: wrangler secret put HOMEY_TOKEN
+#                  wrangler secret put MCP_BEARER
+# Or via Cloudflare dashboard → Workers → Settings → Variables → Encrypted
