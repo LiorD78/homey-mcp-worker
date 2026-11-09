@@ -8,7 +8,8 @@
  *   POST /mcp     — MCP JSON-RPC endpoint (used by Claude.ai)
  *
  * Auth: Authorization: Bearer <MCP_BEARER>
- *   (tolerant: "Bearer " prefix optional, case-insensitive, surrounding whitespace ignored)
+ *   (tolerant: "Bearer" prefix optional, case-insensitive, space after it optional,
+ *    surrounding whitespace ignored — claude.ai header field trims the space after "Bearer")
  *
  * Deployments (same code):
  *   - homey-mcp-worker      — home Homey (default env)
@@ -354,7 +355,7 @@ const tools: Record<string, { description: string; inputSchema: any; handler: To
 
 const SERVER_INFO = {
   name: 'homey-mcp-worker',
-  version: '0.1.1',
+  version: '0.1.2',
 };
 
 const PROTOCOL_VERSION = '2024-11-05';
@@ -428,21 +429,23 @@ async function handleMcp(req: JsonRpcRequest, env: Env): Promise<JsonRpcResponse
 
 // -------------------------- Auth --------------------------
 
-// Accepts "Bearer <secret>", "bearer <secret>" or just "<secret>"; ignores surrounding whitespace/newlines.
+// Accepts "Bearer <secret>", "Bearer<secret>", "bearer <secret>" or just "<secret>";
+// ignores surrounding whitespace/newlines.
 function checkAuth(request: Request, env: Env): { ok: boolean; diag: Record<string, any> } {
   const raw = (request.headers.get('Authorization') || '').trim();
-  const hasPrefix = /^bearer\s+/i.test(raw);
-  const token = raw.replace(/^bearer\s+/i, '').trim();
   const secret = (env.MCP_BEARER || '').trim();
-  const ok = token.length > 0 && token === secret;
+  const hasPrefix = /^bearer/i.test(raw);
+  const stripped = raw.replace(/^bearer\s*/i, '').trim();
+  // Exact match on the raw value too, in case the secret itself happens to start with "bearer".
+  const ok = secret.length > 0 && (stripped === secret || raw === secret);
   // Diagnostic only — never logs the secret or the presented token.
   const diag = {
     hasHeader: raw.length > 0,
     bearerPrefix: hasPrefix,
-    presentedLen: token.length,
+    presentedLen: stripped.length,
     expectedLen: secret.length,
-    sameFirstChar: token.length > 0 && secret.length > 0 && token[0] === secret[0],
-    sameLastChar: token.length > 0 && secret.length > 0 && token[token.length - 1] === secret[secret.length - 1],
+    sameFirstChar: stripped.length > 0 && secret.length > 0 && stripped[0] === secret[0],
+    sameLastChar: stripped.length > 0 && secret.length > 0 && stripped[stripped.length - 1] === secret[secret.length - 1],
   };
   return { ok, diag };
 }
