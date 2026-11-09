@@ -4,9 +4,19 @@ compatibility_date = "2025-05-01"
 compatibility_flags = ["nodejs_compat"]
 
 # Public Homey cloud ID — not secret, just convenient as config
+# Default = domácí Homey
 [vars]
 HOMEY_CLOUD_ID = "6407154758e4600b84144638"
 
-# Secrets set via: wrangler secret put HOMEY_TOKEN
-#                  wrangler secret put MCP_BEARER
+# Homey v práci (TDT) — stejný kód, samostatný worker, vlastní secrets.
+# Deploy: npx wrangler deploy --env tdt
+# Secrets (v CF dashboardu u workeru homey-tdt-mcp-worker): HOMEY_TOKEN, MCP_BEARER
+[env.tdt]
+name = "homey-tdt-mcp-worker"
+
+[env.tdt.vars]
+HOMEY_CLOUD_ID = "69e72a1a8d2e04c8e3ba619f"
+
+# Secrets set via: wrangler secret put HOMEY_TOKEN [--env tdt]
+#                  wrangler secret put MCP_BEARER [--env tdt]
 # Or via Cloudflare dashboard → Workers → Settings → Variables → Encrypted
