@@ -8,6 +8,11 @@
  *   POST /mcp     — MCP JSON-RPC endpoint (used by Claude.ai)
  *
  * Auth: Authorization: Bearer <MCP_BEARER>
+ *   (tolerant: "Bearer " prefix optional, case-insensitive, surrounding whitespace ignored)
+ *
+ * Deployments (same code):
+ *   - homey-mcp-worker      — home Homey (default env)
+ *   - homey-tdt-mcp-worker  — work Homey TDT (wrangler deploy --env tdt)
  *
  * Tools provided:
  *   - homey_list_devices(filter?)
@@ -349,7 +354,7 @@ const tools: Record<string, { description: string; inputSchema: any; handler: To
 
 const SERVER_INFO = {
   name: 'homey-mcp-worker',
-  version: '0.1.0',
+  version: '0.1.1',
 };
 
 const PROTOCOL_VERSION = '2024-11-05';
@@ -421,6 +426,27 @@ async function handleMcp(req: JsonRpcRequest, env: Env): Promise<JsonRpcResponse
   }
 }
 
+// -------------------------- Auth --------------------------
+
+// Accepts "Bearer <secret>", "bearer <secret>" or just "<secret>"; ignores surrounding whitespace/newlines.
+function checkAuth(request: Request, env: Env): { ok: boolean; diag: Record<string, any> } {
+  const raw = (request.headers.get('Authorization') || '').trim();
+  const hasPrefix = /^bearer\s+/i.test(raw);
+  const token = raw.replace(/^bearer\s+/i, '').trim();
+  const secret = (env.MCP_BEARER || '').trim();
+  const ok = token.length > 0 && token === secret;
+  // Diagnostic only — never logs the secret or the presented token.
+  const diag = {
+    hasHeader: raw.length > 0,
+    bearerPrefix: hasPrefix,
+    presentedLen: token.length,
+    expectedLen: secret.length,
+    sameFirstChar: token.length > 0 && secret.length > 0 && token[0] === secret[0],
+    sameLastChar: token.length > 0 && secret.length > 0 && token[token.length - 1] === secret[secret.length - 1],
+  };
+  return { ok, diag };
+}
+
 // -------------------------- Worker entrypoint --------------------------
 
 export default {
@@ -440,12 +466,12 @@ export default {
     }
 
     // Auth
-    const authHeader = request.headers.get('Authorization') || '';
-    const expected = `Bearer ${env.MCP_BEARER}`;
     if (!env.MCP_BEARER) {
       return new Response('Server misconfigured: MCP_BEARER not set', { status: 500 });
     }
-    if (authHeader !== expected) {
+    const auth = checkAuth(request, env);
+    if (!auth.ok) {
+      console.log(JSON.stringify({ auth: 'fail', ...auth.diag }));
       return new Response('Unauthorized', { status: 401 });
     }
 
