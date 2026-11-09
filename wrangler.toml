@@ -8,6 +8,10 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 HOMEY_CLOUD_ID = "6407154758e4600b84144638"
 
+# Workers Logs (bez toho deploy z Gitu logy v dashboardu vypne)
+[observability]
+enabled = true
+
 # Homey v práci (TDT) — stejný kód, samostatný worker, vlastní secrets.
 # Deploy: npx wrangler deploy --env tdt
 # Secrets (v CF dashboardu u workeru homey-tdt-mcp-worker): HOMEY_TOKEN, MCP_BEARER
@@ -16,6 +20,9 @@ name = "homey-tdt-mcp-worker"
 
 [env.tdt.vars]
 HOMEY_CLOUD_ID = "69e72a1a8d2e04c8e3ba619f"
+
+[env.tdt.observability]
+enabled = true
 
 # Secrets set via: wrangler secret put HOMEY_TOKEN [--env tdt]
 #                  wrangler secret put MCP_BEARER [--env tdt]
